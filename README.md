@@ -5,15 +5,16 @@ python3 -m venv venv
 python3 -m pip install -r requirements.txt
 
 Parámetros de ejecución:
--H, --host: Host de la instancia de Odoo
--d, --database: Nombre de la base de datos
--p, --password: Contraseña del usuario administrador
--P, --path: Ruta donde se almacenarán los backups
--s, --server: Endpoint Servidor de almacenamiento
--k, --key: Clave de acceso al servidor de almacenamiento
+-O: Nombre de contenedor de odoo
+-D: Nombre de contenedor de base de datos de odoo
+-d: Nombre de base de datos de postgres
+-U: Usuario de base de datos de odoo
+-X: Contraseña de base de datos de odoo
+-s: Endopoint de servicio de backups
+-k: API Key de autenticación
 
 3. agregar a cron
 Ejecutra
 crontab -e
 Agregar línea
-0 0 * * *  /path/usr/bin/python3 /path/script_backup/main.py -H "https://instanciaodoo" -d "nombrebasedatos" -p "**************************" -P "/path/backups" -s "https://codlan.com" -k "c7e41f4f-****-******"
+0 0 * * *  /path/usr/bin/python3 /path/script_backup/main.py -O bo_16 -D bo16_db -d inn.7junio -U odoo_db -X odoo_db -s "http://localhost:9013" -k "a549dd9b-*****-****-****-*********"
