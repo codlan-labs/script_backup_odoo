@@ -106,3 +106,5 @@ with open(filename_backup, "rb") as backup:
         requests.post(f"{api_endpoint_service}/combine_multiparts",
                         data=json.dumps({"params":{"upload_id":upload_id,"filename":filename,"parts":parts}}),
                         headers={"Content-Type": "application/json","apiKey":api_key})
+
+subprocess.run(["rm","-rf",f"{filename_backup}"], check=True)
