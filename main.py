@@ -186,18 +186,41 @@ def upload_file_to_s3(filepath, api_endpoint, key_api, backup_type="full"):
 
     print(f"Obtenidas {len(urls)} partes de carga para '{filename}'. Subiendo...")
     parts = []
-    with open(filepath, "rb") as backup_data:
-        for num, url in enumerate(urls):
-            part = num + 1
-            file_data = backup_data.read(max_size)
-            res_part = requests.put(url, data=file_data)
+    try:
+        with open(filepath, "rb") as backup_data:
+            for num, url in enumerate(urls):
+                part = num + 1
+                file_data = backup_data.read(max_size)
+                for attempt in range(1, 4):
+                    try:
+                        res_part = requests.put(url, data=file_data, timeout=(30, 1800))
+                    except requests.RequestException as e:
+                        res_part = None
+                        error = str(e)
+                    else:
+                        if res_part.status_code == 200:
+                            break
+                        error = f"Código: {res_part.status_code} {res_part.text[:300]}"
+                    print(f"Intento {attempt}/3 fallido en parte {part}: {error}")
+                else:
+                    raise Exception(f"Error al subir parte {part}. {error}")
 
-            if res_part.status_code != 200:
-                raise Exception(f"Error al subir parte {part}. Código: {res_part.status_code}")
-
-            etag = res_part.headers.get("ETag")
-            parts.append({"ETag": etag, "PartNumber": part})
-            print(f"Parte {part}/{len(urls)} subida exitosamente.")
+                etag = res_part.headers.get("ETag")
+                parts.append({"ETag": etag, "PartNumber": part})
+                print(f"Parte {part}/{len(urls)} subida exitosamente.")
+    except Exception:
+        # Sin abortar, las partes subidas quedan en S3 cobrándose indefinidamente.
+        try:
+            requests.post(
+                f"{api_endpoint}/abort_multipart",
+                data=json.dumps({"params": {"upload_id": upload_id, "filename": filename}}),
+                headers={"Content-Type": "application/json", "apiKey": key_api},
+                timeout=60,
+            )
+            print(f"Subida multipart abortada: {filename}")
+        except Exception as abort_error:
+            print(f"No se pudo abortar la subida multipart: {abort_error}")
+        raise
 
     combine_res = requests.post(
         f"{api_endpoint}/combine_multiparts",
