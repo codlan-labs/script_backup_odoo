@@ -1,5 +1,6 @@
 import subprocess
 from datetime import datetime
+import io
 import os
 import zipfile
 import argparse
@@ -193,7 +194,7 @@ def upload_file_to_s3(filepath, api_endpoint, key_api, backup_type="full"):
                 file_data = backup_data.read(max_size)
                 for attempt in range(1, 4):
                     try:
-                        res_part = requests.put(url, data=file_data, timeout=(30, 1800))
+                        res_part = requests.put(url, data=io.BytesIO(file_data), timeout=(60, 1800))
                     except requests.RequestException as e:
                         res_part = None
                         error = str(e)
